@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaflet Map</title>
+    <!-- leaflet css -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet-transparency@latest/leaflet-transparency.js"></script>
+    <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+    <div id="map"></div>
+
+    <div class="slider-container">
+        <input type="range" id="opacitySlider" min="0" max="1" step="0.1" value="1" />
+    </div>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""></script>
+
+    <script>
+        var initLayerOpacity = 1;
+        var initLineOpacity = 1;
+        var initFillOpacity = 0.7;
+
+        var map = L.map('map').setView([41.309374, 69.281355], 14);
+
+        /*==============================================
+                    TILE LAYER
+        ================================================*/
+        // OSM layer
+        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+        osm.addTo(map);
+
+        // Dark map 
+        var dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        });
+
+        // Google street 
+        var googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
+
+        // Google satellite
+        var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
+
+        /*==============================================
+                    GEOJSON
+        ================================================*/
+        function style(feature) {
+            return {
+                fillColor: "#ff7800",
+                color: "#000",
+                weight: 1,
+                opacity: initLayerOpacity,
+                fillOpacity: initLayerOpacity * initFillOpacity
+            };
+        }
+
+        var polygonData = L.geoJson(null, {
+        //     onEachFeature: function (feature, layer) {
+        //     layer.bindPopup(`<b>Score: </b>` + feature.properties.score)
+        //    },
+            style: {
+                fillColor: "#ff7800",
+                color: "#000",
+                weight: 1,
+                opacity: initLayerOpacity,
+                fillOpacity: initLayerOpacity * initFillOpacity
+            }
+        }).addTo(map);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', './data/mpl_tashkent_trees_crs.geojson', true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                var geoJsonData = JSON.parse(xhr.responseText);
+                polygonData.addData(geoJsonData);
+            }
+        };
+        xhr.send();
+        /*==============================================
+                    LAYER CONTROL
+        ================================================*/
+        var baseMaps = {
+            "OSM": osm,
+            "Dark": dark,
+            "Google Street": googleStreets,
+            "Google Satellite": googleSat
+        };
+
+        var overlayMaps = {
+            "Data": polygonData
+        };
+
+        L.control.layers(baseMaps, overlayMaps, {
+            collapsed: false
+        }).addTo(map);
+
+        /*==============================================
+                    SLIDER FUNCTIONALITY
+        ================================================*/
+        var opacitySlider = document.getElementById("opacitySlider");
+
+        opacitySlider.addEventListener("input", function () {
+            var opacityValue = parseFloat(opacitySlider.value);
+
+            polygonData.setStyle(function (feature) {
+                return {
+                    fillColor: "#ff7800",
+                    color: "#000",
+                    weight: 1,
+                    opacity: opacityValue,
+                    fillOpacity: opacityValue * initFillOpacity
+                };
+            });
+        });
+        L.DomUtil.addClass(map._container, 'leaflet-touch');
+        L.DomUtil.addClass(map._container, 'leaflet-touch-zoom');
+        L.DomUtil.addClass(map._container, 'leaflet-webkit');
+
+    </script>
+</body>
+
+</html>
